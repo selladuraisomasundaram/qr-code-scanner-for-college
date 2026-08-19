@@ -28,7 +28,6 @@ export default function Scan() {
     setShowModal(false);
     setStatus("idle");
     setData("");
-    // We don't reload here anymore to allow for a smoother experience
   };
 
   const handleOK = async () => {
@@ -44,7 +43,6 @@ export default function Scan() {
       const errorMessage = err.response?.data?.message || "Failed to verify ticket";
       toast.error(errorMessage, { id: loadingToast });
       setStatus("idle");
-      // If it's already checked in, we might want to show that specifically
       if (err.response?.status === 400) {
         setShowModal(false);
       }
@@ -59,9 +57,18 @@ export default function Scan() {
       </Head>
       <main className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-          <div className="bg-red-600 p-6 text-white text-center">
-            <h1 className="text-2xl font-bold">Entry Scanner</h1>
-            <p className="text-red-100 text-sm">Align QR code within the frame</p>
+          <div className="bg-red-600 p-6 text-white text-center flex flex-col items-center space-y-3">
+            <div className="w-16 h-16 relative rounded-full overflow-hidden border-2 border-white/30 bg-white">
+              <img 
+                src="/logo.jpg" 
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Entry Scanner</h1>
+              <p className="text-red-100 text-sm">Align QR code within the frame</p>
+            </div>
           </div>
           
           <div className="p-8 flex flex-col items-center">

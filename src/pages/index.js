@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -10,14 +11,23 @@ export default function Home() {
       </Head>
       <main className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex flex-col items-center justify-center p-6">
         <div className="max-w-2xl w-full text-center space-y-8">
-          <div className="space-y-2">
-            <h2 className="text-orange-600 font-semibold tracking-wide uppercase text-sm">Event Entry Management</h2>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-              Paavai Engineering College <span className="text-orange-600">(Autonomous)</span>
-            </h1>
-            <p className="text-gray-600 text-lg max-w-md mx-auto">
-              Streamlined QR-based entry system for campus events and symposiums.
-            </p>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-24 h-24 relative rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
+              <img 
+                src="/logo.jpg" 
+                alt="Paavai Engineering College Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-orange-600 font-semibold tracking-wide uppercase text-sm">Event Entry Management</h2>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
+                Paavai Engineering College <span className="text-orange-600">(Autonomous)</span>
+              </h1>
+              <p className="text-gray-600 text-lg max-w-md mx-auto">
+                Streamlined QR-based entry system for campus events and symposiums.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">

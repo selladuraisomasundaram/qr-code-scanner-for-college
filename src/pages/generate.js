@@ -14,9 +14,18 @@ export default function Generate() {
       </Head>
       <main className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-          <div className="bg-orange-500 p-6 text-white text-center">
-            <h1 className="text-2xl font-bold">Pass Generator</h1>
-            <p className="text-orange-100 text-sm">Create entry codes for participants</p>
+          <div className="bg-orange-500 p-6 text-white text-center flex flex-col items-center space-y-3">
+            <div className="w-16 h-16 relative rounded-full overflow-hidden border-2 border-white/30 bg-white">
+              <img 
+                src="/logo.jpg" 
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Pass Generator</h1>
+              <p className="text-orange-100 text-sm">Create entry codes for participants</p>
+            </div>
           </div>
 
           <div className="p-8 flex flex-col items-center space-y-8">
