@@ -1,6 +1,5 @@
 import Head from "next/head";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function Home() {
   return (
@@ -30,31 +29,18 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+          <div className="flex justify-center mt-12">
             <Link
               href="/scan"
-              className="group relative flex flex-col items-center p-8 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-orange-100"
+              className="group relative flex flex-col items-center p-10 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-orange-100 w-full max-w-sm"
             >
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-gray-800">Scan Entry</span>
-              <p className="text-gray-500 text-sm mt-2">Verify participant QR codes</p>
-            </Link>
-
-            <Link
-              href="/generate"
-              className="group relative flex flex-col items-center p-8 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-orange-100"
-            >
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-gray-800">Generate QR</span>
-              <p className="text-gray-500 text-sm mt-2">Create new event passes</p>
+              <span className="text-3xl font-bold text-gray-800">Scan Entry</span>
+              <p className="text-gray-500 text-base mt-2">Verify participant QR codes</p>
             </Link>
           </div>
 
