@@ -13,70 +13,11 @@ export default async function handler(req, res) {
 
   // GET: Fetch list of unique events grouped by department
   if (req.method === "GET") {
-    try {
-      const auth = new google.auth.GoogleAuth({
-        credentials: {
-          client_email: process.env.GOOGLE_CLIENT_EMAIL,
-          private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-        },
-        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-      });
-
-      const sheets = google.sheets({ version: "v4", auth });
-      const spreadsheetId = process.env.SPREADSHEET_ID;
-      
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "A:Z",
-      });
-
-      const rows = response.data.values;
-      if (!rows || rows.length <= 1) {
-        return res.status(200).json({ departments: {} });
-      }
-
-      // Find the department and event columns dynamically
-      const headers = rows[0].map(h => h.toString().toLowerCase().trim());
-      const deptColIndex = headers.findIndex(h => h.includes("department") || h === "dept");
-      const eventColIndex = headers.findIndex(h => h.includes("event") && !h.includes("status"));
-      
-      if (eventColIndex === -1) {
-        return res.status(200).json({ departments: {} });
-      }
-
-      const deptEventsMap = {};
-      for (let i = 1; i < rows.length; i++) {
-        const deptVal = deptColIndex !== -1 && rows[i][deptColIndex]
-          ? rows[i][deptColIndex].toString().trim().toUpperCase()
-          : "GENERAL";
-        
-        const eventVal = rows[i][eventColIndex];
-        if (eventVal) {
-          if (!deptEventsMap[deptVal]) {
-            deptEventsMap[deptVal] = new Set();
-          }
-          // Split by comma to support multiple events per row
-          eventVal.split(",").forEach(e => {
-            const trimmed = e.trim();
-            if (trimmed) deptEventsMap[deptVal].add(trimmed);
-          });
-        }
-      }
-
-      // Convert Sets to sorted Arrays
-      const departments = {};
-      Object.keys(deptEventsMap).forEach(dept => {
-        departments[dept] = Array.from(deptEventsMap[dept]).sort();
-      });
-
-      return res.status(200).json({ departments });
-    } catch (error) {
-      console.error("Google Sheets API Error (GET):", error.message);
-      return res.status(500).json({ 
-        message: "Failed to fetch events from Google Sheets.", 
-        error: error.message 
-      });
-    }
+    const departments = {
+      "CSE": ["Event A", "Event B", "Event C"],
+      "ECE": ["Event D", "Event E", "Event F"]
+    };
+    return res.status(200).json({ departments });
   }
 
   // POST: Verify scanned ticket ID and check in
