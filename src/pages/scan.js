@@ -15,14 +15,73 @@ export default function Scan() {
   const [authorized, setAuthorized] = useState(false);
   const qrRef = useRef(null);
 
+  // Role and Event verification states
+  const [role, setRole] = useState("volunteer");
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
+  const [customEvent, setCustomEvent] = useState("");
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
       router.push("/login");
-    } else {
-      setAuthorized(true);
+      return;
+    }
+    setAuthorized(true);
+
+    const activeRole = localStorage.getItem("role") || "volunteer";
+    setRole(activeRole);
+
+    if (activeRole === "event_manager") {
+      // Load saved event selection from localStorage
+      const storedEvent = localStorage.getItem("selectedEvent");
+      if (storedEvent) {
+        if (storedEvent.startsWith("custom:")) {
+          const val = storedEvent.replace("custom:", "");
+          setIsCustom(true);
+          setSelectedEvent("custom");
+          setCustomEvent(val);
+        } else {
+          setSelectedEvent(storedEvent);
+        }
+      }
+
+      // Fetch dynamic events list from Google Sheet
+      async function fetchEvents() {
+        setIsLoadingEvents(true);
+        try {
+          const response = await axios.get("/api/postData");
+          if (response.data.events) {
+            setEvents(response.data.events);
+          }
+        } catch (err) {
+          console.error("Failed to load events:", err);
+          toast.error("Could not load event list from spreadsheet.");
+        } finally {
+          setIsLoadingEvents(false);
+        }
+      }
+      fetchEvents();
     }
   }, [router]);
+
+  const handleEventChange = (val) => {
+    setSelectedEvent(val);
+    if (val === "custom") {
+      setIsCustom(true);
+      localStorage.setItem("selectedEvent", `custom:${customEvent}`);
+    } else {
+      setIsCustom(false);
+      localStorage.setItem("selectedEvent", val);
+    }
+  };
+
+  const handleCustomEventChange = (val) => {
+    setCustomEvent(val);
+    localStorage.setItem("selectedEvent", `custom:${val}`);
+  };
 
   const handleScan = (result, error) => {
     if (!!result && status === "idle") {
@@ -43,10 +102,25 @@ export default function Scan() {
   const handleOK = async () => {
     setStatus("submitting");
     const loadingToast = toast.loading("Verifying ticket...");
+    const eventToSend = role === "event_manager"
+      ? (isCustom ? customEvent : selectedEvent)
+      : undefined;
+
+    if (role === "event_manager" && !eventToSend) {
+      toast.error("Please select or enter the event you are managing!", { id: loadingToast });
+      setStatus("idle");
+      return;
+    }
     
     try {
-      const response = await axios.post(`/api/postData`, { data });
-      toast.success("Check-in successful!", { id: loadingToast });
+      const response = await axios.post(`/api/postData`, { 
+        data,
+        event: eventToSend
+      });
+      const successMessage = eventToSend 
+        ? `Check-in approved for ${eventToSend}!`
+        : "Check-in successful!";
+      toast.success(successMessage, { id: loadingToast });
       setParticipantName(response.data.name);
       setStatus("success");
     } catch (err) {
@@ -84,6 +158,44 @@ export default function Scan() {
           </div>
           
           <div className="p-8 flex flex-col items-center">
+            {/* Event Selector - Only shown to Event Managers */}
+            {role === "event_manager" && (
+              <div className="w-full mb-6 space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Verification Venue / Event
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedEvent}
+                    onChange={(e) => handleEventChange(e.target.value)}
+                    className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 bg-white"
+                  >
+                    <option value="">-- Choose Event --</option>
+                    {isLoadingEvents ? (
+                      <option disabled>Loading events from sheet...</option>
+                    ) : (
+                      events.map((evt) => (
+                        <option key={evt} value={evt}>
+                          Event Hall: {evt}
+                        </option>
+                      ))
+                    )}
+                    <option value="custom">Custom/Other Event...</option>
+                  </select>
+                </div>
+
+                {isCustom && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom event name"
+                    value={customEvent}
+                    onChange={(e) => handleCustomEventChange(e.target.value)}
+                    className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 mt-2"
+                  />
+                )}
+              </div>
+            )}
+
             <div className="relative w-full aspect-square max-w-[300px] rounded-2xl overflow-hidden border-4 border-red-50 shadow-inner bg-black">
               {status === "idle" && (
                 <QrReader

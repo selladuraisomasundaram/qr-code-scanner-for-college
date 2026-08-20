@@ -6,12 +6,14 @@ import { useRouter } from "next/router";
 export default function Home() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
+  const [role, setRole] = useState("");
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
       router.push("/login");
     } else {
+      setRole(localStorage.getItem("role") || "volunteer");
       setAuthorized(true);
     }
   }, [router]);
@@ -35,7 +37,9 @@ export default function Home() {
               />
             </div>
             <div className="space-y-2">
-              <h2 className="text-orange-600 font-semibold tracking-wide uppercase text-sm">Event Entry Management</h2>
+              <h2 className="text-orange-600 font-semibold tracking-wide uppercase text-sm">
+                Event Entry Management {role === "event_manager" ? "(Event Manager Portal)" : "(Volunteer Portal)"}
+              </h2>
               <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
                 Paavai Engineering College <span className="text-orange-600">(Autonomous)</span>
               </h1>
@@ -62,6 +66,8 @@ export default function Home() {
             <button
               onClick={() => {
                 localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("role");
+                localStorage.removeItem("selectedEvent");
                 router.push("/login");
               }}
               className="md:absolute md:top-4 md:right-4 px-6 py-2 bg-white/50 hover:bg-white text-gray-600 rounded-full text-sm font-medium transition-all border border-gray-200"
