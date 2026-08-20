@@ -21,10 +21,10 @@ export default async function handler(req, res) {
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      range: "Sheet1!A:G",
+      range: "Sheet1!A:I",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[new Date().toISOString(), name, email, "", "", uniqueId, "Pending"]],
+        values: [[new Date().toISOString(), name, email, "", "", uniqueId, "Pending", "", ""]],
       },
     });
 

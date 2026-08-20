@@ -98,10 +98,12 @@ export default async function handler(req, res) {
     // Parse headers to locate all columns dynamically
     const headers = rows[0].map(h => h.toString().toLowerCase().trim());
     const idColIndex = headers.findIndex(h => h.includes("unique id") || h === "id");
-    const statusColIndex = headers.findIndex(h => h.includes("status"));
-    const eventColIndex = headers.findIndex(h => h.includes("event"));
+    const statusColIndex = headers.findIndex(h => h.includes("status") && !h.includes("event"));
+    const eventColIndex = headers.findIndex(h => h.includes("event") && !h.includes("status"));
     const nameColIndex = headers.findIndex(h => h.includes("name") || h.includes("full name"));
     const emailColIndex = headers.findIndex(h => h.includes("email"));
+    const event1ColIndex = headers.findIndex(h => h.includes("event 1 status") || h.includes("event1 status") || h.includes("event 1"));
+    const event2ColIndex = headers.findIndex(h => h.includes("event 2 status") || h.includes("event2 status") || h.includes("event 2"));
 
     // Fallbacks if headers not detected
     const idIndex = idColIndex !== -1 ? idColIndex : 5; // Column F
@@ -109,6 +111,8 @@ export default async function handler(req, res) {
     const eventIndex = eventColIndex !== -1 ? eventColIndex : 4; // Column E
     const nameIndex = nameColIndex !== -1 ? nameColIndex : 1; // Column B
     const emailIndex = emailColIndex !== -1 ? emailColIndex : 2; // Column C
+    const event1StatusIndex = event1ColIndex !== -1 ? event1ColIndex : 7; // Column H
+    const event2StatusIndex = event2ColIndex !== -1 ? event2ColIndex : 8; // Column I
 
     // Find the row with the matching Unique ID
     let rowIndex = -1;
@@ -131,14 +135,23 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Invalid Ticket: ID not found in records." });
     }
 
-    // If verification is for a specific event
+    // If verification is for a specific event (Event Manager)
     if (selectedEvent) {
       if (eventColIndex === -1) {
         return res.status(400).json({
           message: "Event verification is not configured. No 'event' column header found in the spreadsheet."
         });
       }
+
+      // 1. Participant must be checked in at the main gate
+      if (userData.status !== "Checked In") {
+        return res.status(400).json({
+          message: "Access Denied: Participant must first check in at the Main Gate.",
+          name: userData.name
+        });
+      }
       
+      // 2. Verify participant is registered for this event
       const participantEvents = userData.events.toString().split(",").map(e => e.trim().toLowerCase());
       const targetEvent = selectedEvent.toString().trim().toLowerCase();
       
@@ -149,18 +162,54 @@ export default async function handler(req, res) {
           name: userData.name 
         });
       }
+
+      // 3. Max 2 event entries validation
+      const currentRow = rows[rowIndex - 1] || [];
+      const event1Val = currentRow[event1StatusIndex] ? currentRow[event1StatusIndex].toString().trim() : "";
+      const event2Val = currentRow[event2StatusIndex] ? currentRow[event2StatusIndex].toString().trim() : "";
+
+      const event1Lower = event1Val.toLowerCase();
+      const event2Lower = event2Val.toLowerCase();
+
+      // Check if already checked in to this specific event
+      if (event1Lower === targetEvent || event2Lower === targetEvent) {
+        return res.status(200).json({
+          message: `Already checked in for ${selectedEvent}!`,
+          name: userData.name
+        });
+      }
+
+      // Check if limit of 2 is exceeded
+      if (event1Val && event2Val) {
+        return res.status(400).json({
+          message: `Access Denied: Participant already checked in to 2 events (${event1Val}, ${event2Val}). Max 2 allowed.`,
+          name: userData.name
+        });
+      }
+
+      // Update the free event status column
+      const targetColIndex = !event1Val ? event1StatusIndex : event2StatusIndex;
+      const colLetter = String.fromCharCode(65 + targetColIndex);
+      
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${colLetter}${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[selectedEvent]],
+        },
+      });
+
     } else {
-      // General entry: check if already checked in
+      // General entry (Volunteer): check if already checked in
       if (userData.status === "Checked In") {
         return res.status(400).json({ 
           message: "This ticket has already been used.", 
           name: userData.name 
         });
       }
-    }
 
-    // Update Status to "Checked In" if not already set
-    if (userData.status !== "Checked In") {
+      // Update Status to "Checked In" (Column F/G)
       const colLetter = String.fromCharCode(65 + statusIndex);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
