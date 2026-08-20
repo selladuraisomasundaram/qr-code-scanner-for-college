@@ -1,13 +1,19 @@
 import nodemailer from 'nodemailer';
 
-// You can add as many Gmail accounts as you want here
+// 1. Collect Gmail Accounts
 const gmailAccounts = [
   { user: process.env.GMAIL_USER_1, pass: process.env.GMAIL_PASS_1 },
   { user: process.env.GMAIL_USER_2, pass: process.env.GMAIL_PASS_2 },
-  { user: process.env.GMAIL_USER_3, pass: process.env.GMAIL_PASS_3 },
+].filter(acc => acc.user && acc.pass);
+
+// 2. Collect Mailjet Accounts
+const mailjetAccounts = [
+  { user: process.env.MAILJET_API_KEY_1, pass: process.env.MAILJET_SECRET_KEY_1 },
+  { user: process.env.MAILJET_API_KEY_2, pass: process.env.MAILJET_SECRET_KEY_2 },
 ].filter(acc => acc.user && acc.pass);
 
 const providers = [
+  // Add Gmails to the list
   ...gmailAccounts.map((acc, index) => ({
     name: `Gmail-Account-${index + 1}`,
     transport: {
@@ -15,6 +21,16 @@ const providers = [
       auth: acc,
     },
   })),
+  // Add Mailjets to the list
+  ...mailjetAccounts.map((acc, index) => ({
+    name: `Mailjet-Account-${index + 1}`,
+    transport: {
+      host: 'in-v3.mailjet.com',
+      port: 587,
+      auth: acc,
+    },
+  })),
+  // Fallback to Brevo
   {
     name: 'Brevo',
     transport: {
@@ -34,18 +50,24 @@ export async function sendSmartEmail({ to, subject, html }) {
   for (const provider of providers) {
     try {
       const transporter = nodemailer.createTransport(provider.transport);
+      
+      // For Mailjet/Brevo, the 'from' email must be the one you verified in their dashboard
+      const senderEmail = provider.name.includes('Gmail') 
+        ? provider.transport.auth.user 
+        : (process.env.VERIFIED_SENDER_EMAIL || provider.transport.auth.user);
+
       await transporter.sendMail({
-        from: `"${process.env.SENDER_NAME || 'Event Team'}" <${provider.transport.auth.user}>`,
+        from: `"${process.env.SENDER_NAME || 'Event Team'}" <${senderEmail}>`,
         to,
         subject,
         html,
       });
+      
       console.log(`Email sent successfully via ${provider.name}`);
       return { success: true, provider: provider.name };
     } catch (error) {
       console.error(`${provider.name} failed:`, error.message);
       lastError = error;
-      // If a Gmail account fails (limit reached), it moves to the next one
     }
   }
 
