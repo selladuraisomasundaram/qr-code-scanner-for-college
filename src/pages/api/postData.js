@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ message: "Server configuration error: Missing API credentials." });
   }
 
-  // GET: Fetch list of unique events from the Google Sheet
+  // GET: Fetch list of unique events grouped by department
   if (req.method === "GET") {
     try {
       const auth = new google.auth.GoogleAuth({
@@ -32,30 +32,44 @@ export default async function handler(req, res) {
 
       const rows = response.data.values;
       if (!rows || rows.length <= 1) {
-        return res.status(200).json({ events: [] });
+        return res.status(200).json({ departments: {} });
       }
 
-      // Find the event column header dynamically
+      // Find the department and event columns dynamically
       const headers = rows[0].map(h => h.toString().toLowerCase().trim());
-      const eventColIndex = headers.findIndex(h => h.includes("event"));
+      const deptColIndex = headers.findIndex(h => h.includes("department") || h === "dept");
+      const eventColIndex = headers.findIndex(h => h.includes("event") && !h.includes("status"));
       
       if (eventColIndex === -1) {
-        return res.status(200).json({ events: [] });
+        return res.status(200).json({ departments: {} });
       }
 
-      const eventsSet = new Set();
+      const deptEventsMap = {};
       for (let i = 1; i < rows.length; i++) {
-        const val = rows[i][eventColIndex];
-        if (val) {
-          // Split by comma to support multiple events per row (e.g. "Coding, Web Design")
-          val.split(",").forEach(e => {
+        const deptVal = deptColIndex !== -1 && rows[i][deptColIndex]
+          ? rows[i][deptColIndex].toString().trim().toUpperCase()
+          : "GENERAL";
+        
+        const eventVal = rows[i][eventColIndex];
+        if (eventVal) {
+          if (!deptEventsMap[deptVal]) {
+            deptEventsMap[deptVal] = new Set();
+          }
+          // Split by comma to support multiple events per row
+          eventVal.split(",").forEach(e => {
             const trimmed = e.trim();
-            if (trimmed) eventsSet.add(trimmed);
+            if (trimmed) deptEventsMap[deptVal].add(trimmed);
           });
         }
       }
 
-      return res.status(200).json({ events: Array.from(eventsSet).sort() });
+      // Convert Sets to sorted Arrays
+      const departments = {};
+      Object.keys(deptEventsMap).forEach(dept => {
+        departments[dept] = Array.from(deptEventsMap[dept]).sort();
+      });
+
+      return res.status(200).json({ departments });
     } catch (error) {
       console.error("Google Sheets API Error (GET):", error.message);
       return res.status(500).json({ 

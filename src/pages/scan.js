@@ -17,6 +17,8 @@ export default function Scan() {
 
   // Role and Event verification states
   const [role, setRole] = useState("volunteer");
+  const [departmentsMap, setDepartmentsMap] = useState({});
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState("");
   const [isCustom, setIsCustom] = useState(false);
@@ -35,6 +37,10 @@ export default function Scan() {
     setRole(activeRole);
 
     if (activeRole === "event_manager") {
+      // Load saved department selection
+      const storedDept = localStorage.getItem("selectedDepartment") || "";
+      setSelectedDepartment(storedDept);
+
       // Load saved event selection from localStorage
       const storedEvent = localStorage.getItem("selectedEvent");
       if (storedEvent) {
@@ -48,17 +54,22 @@ export default function Scan() {
         }
       }
 
-      // Fetch dynamic events list from Google Sheet
+      // Fetch dynamic departments and events map from Google Sheet
       async function fetchEvents() {
         setIsLoadingEvents(true);
         try {
           const response = await axios.get("/api/postData");
-          if (response.data.events) {
-            setEvents(response.data.events);
+          if (response.data.departments) {
+            setDepartmentsMap(response.data.departments);
+            
+            // Populate events list based on loaded department selection
+            if (storedDept && response.data.departments[storedDept]) {
+              setEvents(response.data.departments[storedDept]);
+            }
           }
         } catch (err) {
           console.error("Failed to load events:", err);
-          toast.error("Could not load event list from spreadsheet.");
+          toast.error("Could not load event mapping from spreadsheet.");
         } finally {
           setIsLoadingEvents(false);
         }
@@ -66,6 +77,22 @@ export default function Scan() {
       fetchEvents();
     }
   }, [router]);
+
+  const handleDepartmentChange = (dept) => {
+    setSelectedDepartment(dept);
+    localStorage.setItem("selectedDepartment", dept);
+    
+    // Clear event selection when department changes
+    setSelectedEvent("");
+    localStorage.removeItem("selectedEvent");
+    setIsCustom(false);
+    
+    if (dept && departmentsMap[dept]) {
+      setEvents(departmentsMap[dept]);
+    } else {
+      setEvents([]);
+    }
+  };
 
   const handleEventChange = (val) => {
     setSelectedEvent(val);
@@ -105,6 +132,12 @@ export default function Scan() {
     const eventToSend = role === "event_manager"
       ? (isCustom ? customEvent : selectedEvent)
       : undefined;
+
+    if (role === "event_manager" && !selectedDepartment) {
+      toast.error("Please select the department first!", { id: loadingToast });
+      setStatus("idle");
+      return;
+    }
 
     if (role === "event_manager" && !eventToSend) {
       toast.error("Please select or enter the event you are managing!", { id: loadingToast });
@@ -160,29 +193,59 @@ export default function Scan() {
           <div className="p-8 flex flex-col items-center">
             {/* Event Selector - Only shown to Event Managers */}
             {role === "event_manager" && (
-              <div className="w-full mb-6 space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Verification Venue / Event
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedEvent}
-                    onChange={(e) => handleEventChange(e.target.value)}
-                    className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 bg-white"
-                  >
-                    <option value="">-- Choose Event --</option>
-                    {isLoadingEvents ? (
-                      <option disabled>Loading events from sheet...</option>
-                    ) : (
-                      events.map((evt) => (
-                        <option key={evt} value={evt}>
-                          Event Hall: {evt}
-                        </option>
-                      ))
-                    )}
-                    <option value="custom">Custom/Other Event...</option>
-                  </select>
+              <>
+                {/* Department Selector */}
+                <div className="w-full mb-4 space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Organizing Department
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedDepartment}
+                      onChange={(e) => handleDepartmentChange(e.target.value)}
+                      className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 bg-white"
+                    >
+                      <option value="">-- Choose Department --</option>
+                      {isLoadingEvents ? (
+                        <option disabled>Loading departments...</option>
+                      ) : (
+                        Object.keys(departmentsMap).map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
                 </div>
+
+                {/* Event Selector */}
+                <div className="w-full mb-6 space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Verification Venue / Event
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedEvent}
+                      onChange={(e) => handleEventChange(e.target.value)}
+                      disabled={!selectedDepartment}
+                      className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 bg-white disabled:opacity-50"
+                    >
+                      <option value="">
+                        {!selectedDepartment ? "-- Select Department First --" : "-- Choose Event --"}
+                      </option>
+                      {isLoadingEvents ? (
+                        <option disabled>Loading events from sheet...</option>
+                      ) : (
+                        events.map((evt) => (
+                          <option key={evt} value={evt}>
+                            Event Hall: {evt}
+                          </option>
+                        ))
+                      )}
+                      <option value="custom">Custom/Other Event...</option>
+                    </select>
+                  </div>
 
                 {isCustom && (
                   <input
@@ -194,6 +257,7 @@ export default function Scan() {
                   />
                 )}
               </div>
+              </>
             )}
 
             <div className="relative w-full aspect-square max-w-[300px] rounded-2xl overflow-hidden border-4 border-red-50 shadow-inner bg-black">
