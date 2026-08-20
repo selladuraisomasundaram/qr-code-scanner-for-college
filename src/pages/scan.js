@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { QrReader } from "react-qr-reader";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -12,7 +12,17 @@ export default function Scan() {
   const [showModal, setShowModal] = useState(false);
   const [status, setStatus] = useState("idle"); // idle, submitting, success
   const [participantName, setParticipantName] = useState("");
+  const [authorized, setAuthorized] = useState(false);
   const qrRef = useRef(null);
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    if (!isLoggedIn) {
+      router.push("/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, [router]);
 
   const handleScan = (result, error) => {
     if (!!result && status === "idle") {
@@ -48,6 +58,8 @@ export default function Scan() {
       }
     }
   };
+
+  if (!authorized) return null;
 
   return (
     <>

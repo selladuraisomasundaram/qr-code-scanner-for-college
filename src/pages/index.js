@@ -1,7 +1,23 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 export default function Home() {
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    if (!isLoggedIn) {
+      router.push("/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, [router]);
+
+  if (!authorized) return null;
+
   return (
     <>
       <Head>
@@ -29,7 +45,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex justify-center mt-12">
+          <div className="flex flex-col md:flex-row justify-center gap-6 mt-12">
             <Link
               href="/scan"
               className="group relative flex flex-col items-center p-10 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-orange-100 w-full max-w-sm"
@@ -42,6 +58,16 @@ export default function Home() {
               <span className="text-3xl font-bold text-gray-800">Scan Entry</span>
               <p className="text-gray-500 text-base mt-2">Verify participant QR codes</p>
             </Link>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem("isLoggedIn");
+                router.push("/login");
+              }}
+              className="md:absolute md:top-4 md:right-4 px-6 py-2 bg-white/50 hover:bg-white text-gray-600 rounded-full text-sm font-medium transition-all border border-gray-200"
+            >
+              Logout
+            </button>
           </div>
 
           <footer className="pt-12 text-gray-400 text-sm">
