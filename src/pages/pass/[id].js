@@ -102,7 +102,6 @@ export default function DigitalPass() {
       
       <footer className="mt-8 text-gray-400 text-xs flex flex-col items-center gap-2">
         <p>© {new Date().getFullYear()} Paavai Engineering College</p>
-        <Link href="/" className="text-orange-600 hover:underline font-medium">Admin Dashboard</Link>
       </footer>
     </div>
   );
