@@ -30,9 +30,12 @@ export default async function handler(req, res) {
     const sheets = google.sheets({ version: "v4", auth });
     const spreadsheetId = process.env.SPREADSHEET_ID;
 
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetName = spreadsheet.data.sheets[0].properties.title;
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "Sheet1!A:Z",
+      range: `${sheetName}!A:Z`,
     });
 
     const rows = response.data.values;

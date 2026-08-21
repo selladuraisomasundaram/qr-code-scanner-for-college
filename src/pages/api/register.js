@@ -18,10 +18,14 @@ export default async function handler(req, res) {
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
     const sheets = google.sheets({ version: "v4", auth });
+    const spreadsheetId = process.env.SPREADSHEET_ID;
+    
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetName = spreadsheet.data.sheets[0].properties.title;
     
     await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.SPREADSHEET_ID,
-      range: "Sheet1!A:J",
+      spreadsheetId,
+      range: `${sheetName}!A:J`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [[new Date().toISOString(), name, email, "", "", "", uniqueId, "Pending", "", ""]],

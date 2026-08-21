@@ -63,9 +63,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetName = spreadsheet.data.sheets[0].properties.title;
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "Sheet1!A:Z",
+      range: `${sheetName}!A:Z`,
     });
 
     const rows = response.data.values;
@@ -132,7 +135,7 @@ export default async function handler(req, res) {
       
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Sheet1!${colLetter}${rowIndex}`,
+        range: `${sheetName}!${colLetter}${rowIndex}`,
         valueInputOption: "USER_ENTERED",
         requestBody: { values: [[selectedEvent]] },
       });
@@ -145,7 +148,7 @@ export default async function handler(req, res) {
       const colLetter = String.fromCharCode(65 + statusIndex);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Sheet1!${colLetter}${rowIndex}`,
+        range: `${sheetName}!${colLetter}${rowIndex}`,
         valueInputOption: "USER_ENTERED",
         requestBody: { values: [["Checked In"]] },
       });
