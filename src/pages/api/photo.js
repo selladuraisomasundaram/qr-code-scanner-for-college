@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import axios from "axios";
 
 const getFileIdFromUrl = (urlOrId) => {
   if (!urlOrId) return null;
@@ -41,8 +42,51 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Invalid Google Drive file URL or ID format." });
   }
 
+  let publicErrorDetails = null;
+
+  // 1. Try public direct fetch first (no GCP Drive API activation required)
+  try {
+    const publicUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    const response = await axios({
+      method: "get",
+      url: publicUrl,
+      responseType: "stream",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+      }
+    });
+
+    const contentType = response.headers["content-type"] || "";
+    
+    // If the response is HTML, it means Google Drive redirected to the login page (file is private).
+    // Throw an error to trigger the catch block and fall back to the authenticated service account.
+    if (contentType.includes("text/html")) {
+      throw new Error("Google Drive redirected to the login page. The file is private.");
+    }
+    
+    let finalContentType = contentType;
+    if (contentType.includes("octet-stream") || !contentType) {
+      finalContentType = "image/jpeg";
+    }
+    
+    res.setHeader("Content-Type", finalContentType);
+    res.setHeader("Cache-Control", "public, max-age=86400, must-revalidate");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    response.data.pipe(res);
+    return;
+  } catch (publicError) {
+    publicErrorDetails = publicError.message;
+    console.error(`[Proxy Debug] Public direct fetch failed for file ID ${fileId}:`, publicError.message);
+  }
+
+  // 2. Fallback to authenticated Google Drive API (requires Drive API enabled in GCP console)
   if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
-    return res.status(500).json({ message: "Server configuration error: Missing API credentials." });
+    console.error("[Proxy Debug] Authenticated fallback skipped: Missing credentials in .env");
+    return res.status(500).json({ 
+      message: "Server configuration error: Missing API credentials.",
+      publicError: publicErrorDetails
+    });
   }
 
   try {
@@ -56,7 +100,7 @@ export default async function handler(req, res) {
 
     const drive = google.drive({ version: "v3", auth });
 
-    // 1. Fetch file metadata to determine the image type
+    // Fetch file metadata
     let metadata;
     try {
       metadata = await drive.files.get({
@@ -64,30 +108,34 @@ export default async function handler(req, res) {
         fields: "mimeType, name",
       });
     } catch (metaError) {
-      console.error(`Metadata fetch failed for file ID ${fileId}:`, metaError.message);
+      console.error(`[Proxy Debug] Authenticated metadata fetch failed for file ID ${fileId}:`, metaError.message);
       return res.status(404).json({ 
         message: "File not found or access denied.", 
+        error: metaError.message,
+        publicError: publicErrorDetails,
         details: "Please ensure the Google Drive folder containing the uploaded photos is shared with the service account: " + process.env.GOOGLE_CLIENT_EMAIL
       });
     }
 
     const mimeType = metadata.data.mimeType || "image/jpeg";
 
-    // 2. Fetch the file media stream
+    // Fetch the file media stream
     const fileResponse = await drive.files.get(
       { fileId, alt: "media" },
       { responseType: "stream" }
     );
 
-    // 3. Set headers for CORS and caching (cache for 1 day)
     res.setHeader("Content-Type", mimeType);
     res.setHeader("Cache-Control", "public, max-age=86400, must-revalidate");
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    // 4. Pipe the image stream directly to the response
     fileResponse.data.pipe(res);
   } catch (error) {
-    console.error("Error in photo proxy API:", error);
-    return res.status(500).json({ message: "Proxy error fetching image", error: error.message });
+    console.error("[Proxy Debug] Authenticated fallback failed:", error.message);
+    return res.status(500).json({ 
+      message: "Proxy error fetching image via authenticated fallback", 
+      error: error.message,
+      publicError: publicErrorDetails
+    });
   }
 }

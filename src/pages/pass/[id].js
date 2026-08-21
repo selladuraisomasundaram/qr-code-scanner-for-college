@@ -22,6 +22,18 @@ export default function DigitalPass() {
         const response = await axios.get(`/api/getParticipant?id=${id}`);
         setParticipant(response.data);
         setError(null);
+
+        // Background diagnostic check to print photo load issues directly to the browser console
+        if (response.data && response.data.photoUrl) {
+          axios.get(`/api/photo?url=${encodeURIComponent(response.data.photoUrl)}`)
+            .catch(photoErr => {
+              console.error("====== DIGITAL PASS: PHOTO LOAD ERROR ======");
+              console.error("Status Code:", photoErr.response?.status || "Unknown");
+              console.error("Error Payload:", photoErr.response?.data || photoErr.message);
+              console.error("Suggestion: If it is a 404, check that your Google Drive folder is shared publicly or that the Google Drive API is enabled in your Google Cloud Console project.");
+              console.error("=============================================");
+            });
+        }
       } catch (err) {
         console.error("Failed to load participant details:", err);
         setError(err.response?.data?.message || "Invalid or missing Entry ID.");
@@ -94,7 +106,7 @@ export default function DigitalPass() {
 
       // Set dimension for expanded height to fit photo and details nicely
       canvas.width = 600;
-      canvas.height = 1050;
+      canvas.height = 1000;
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
@@ -102,7 +114,7 @@ export default function DigitalPass() {
       // Draw Card Base
       ctx.save();
       ctx.fillStyle = "#ffffff";
-      drawRoundRect(ctx, 0, 0, 600, 1050, 32);
+      drawRoundRect(ctx, 0, 0, 600, 1000, 32);
       ctx.fill();
       ctx.clip();
 
@@ -191,52 +203,48 @@ export default function DigitalPass() {
       }
       ctx.restore();
 
-      // Draw Participant Name & Email
+      // Draw Participant Name (Email removed)
       ctx.fillStyle = "#1f2937";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
       ctx.fillText(participant?.name || "Participant Name", 300, 440);
 
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "medium 14px system-ui, -apple-system, sans-serif";
-      ctx.fillText(participant?.email || "Participant Email", 300, 475);
-
       // Draw QR Code Container Box
       ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = "#fff7ed";
       ctx.lineWidth = 4;
-      drawRoundRect(ctx, 175, 515, 250, 250, 20);
+      drawRoundRect(ctx, 175, 485, 250, 250, 20);
       ctx.fill();
       ctx.stroke();
 
       // Draw QR Code
       if (qrImg) {
-        ctx.drawImage(qrImg, 190, 530, 220, 220);
+        ctx.drawImage(qrImg, 190, 500, 220, 220);
       }
 
       // Draw Unique Entry ID Block
       ctx.fillStyle = "#9ca3af";
       ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
-      ctx.fillText("UNIQUE ENTRY ID", 300, 800);
+      ctx.fillText("UNIQUE ENTRY ID", 300, 770);
 
       ctx.fillStyle = "#f9fafb";
       ctx.strokeStyle = "#f3f4f6";
       ctx.lineWidth = 2;
-      drawRoundRect(ctx, 100, 825, 400, 60, 12);
+      drawRoundRect(ctx, 100, 795, 400, 60, 12);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = "#1f2937";
       ctx.font = "bold 20px monospace";
-      ctx.fillText(id, 300, 855);
+      ctx.fillText(id, 300, 825);
 
       // Draw Footer Text
       ctx.fillStyle = "#9ca3af";
       ctx.font = "12px system-ui, -apple-system, sans-serif";
-      ctx.fillText("Please present this QR code at the entry gate for verification.", 300, 930);
+      ctx.fillText("Please present this QR code at the entry gate for verification.", 300, 900);
 
-      ctx.fillText(`© ${new Date().getFullYear()} Paavai Engineering College`, 300, 970);
+      ctx.fillText(`© ${new Date().getFullYear()} Paavai Engineering College`, 300, 940);
 
       // Trigger Download
       const pngFile = canvas.toDataURL("image/png");
@@ -304,7 +312,6 @@ export default function DigitalPass() {
               )}
             </div>
             <h2 className="text-xl font-extrabold text-gray-800">{participant?.name || "Participant"}</h2>
-            <p className="text-xs text-gray-400 font-semibold">{participant?.email}</p>
           </div>
 
           <div className="p-4 bg-white border-2 border-orange-50 rounded-2xl mb-6 shadow-inner">
