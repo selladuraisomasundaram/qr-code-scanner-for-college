@@ -21,24 +21,140 @@ export default function DigitalPass() {
 
   const downloadQR = () => {
     const svg = document.getElementById("QRCode");
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
+    if (!svg) return;
     
-    img.onload = () => {
-      canvas.width = img.width + 40;
-      canvas.height = img.height + 40;
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 20, 20);
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const qrSrc = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+
+    const loadImage = (src, isCrossOrigin = false) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        if (isCrossOrigin) {
+          img.crossOrigin = "anonymous";
+        }
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    };
+
+    const drawRoundRect = (ctx, x, y, width, height, radius) => {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    };
+
+    Promise.all([
+      loadImage("/logo.jpg", true),
+      loadImage(qrSrc)
+    ]).then(([logoImg, qrImg]) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = 600;
+      canvas.height = 900;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      // Draw Card Base
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      drawRoundRect(ctx, 0, 0, 600, 900, 32);
+      ctx.fill();
+      ctx.clip();
+
+      // Draw Header Background
+      ctx.fillStyle = "#ea580c";
+      ctx.fillRect(0, 0, 600, 260);
+
+      // Draw Logo Circle with Shadow
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(300, 90, 48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // Draw Logo Image
+      if (logoImg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(300, 90, 45, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(logoImg, 255, 45, 90, 90);
+        ctx.restore();
+      }
+
+      // Draw Header Text
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
+      ctx.fillText("Official Event Pass", 300, 175);
+
+      ctx.fillStyle = "#ffedd5";
+      ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
+      ctx.fillText("PAAVAI ENGINEERING COLLEGE", 300, 215);
+
+      ctx.restore();
+
+      // Draw QR Code Container Box
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#fff7ed";
+      ctx.lineWidth = 4;
+      drawRoundRect(ctx, 160, 310, 280, 280, 20);
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw QR Code
+      if (qrImg) {
+        ctx.drawImage(qrImg, 180, 330, 240, 240);
+      }
+
+      // Draw Unique Entry ID Block
+      ctx.fillStyle = "#9ca3af";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
+      ctx.fillText("UNIQUE ENTRY ID", 300, 640);
+
+      ctx.fillStyle = "#f9fafb";
+      ctx.strokeStyle = "#f3f4f6";
+      ctx.lineWidth = 2;
+      drawRoundRect(ctx, 100, 665, 400, 60, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#1f2937";
+      ctx.font = "bold 20px monospace";
+      ctx.fillText(id, 300, 695);
+
+      // Draw Footer Text
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "12px system-ui, -apple-system, sans-serif";
+      ctx.fillText("Please present this QR code at the entry gate for verification.", 300, 770);
+
+      ctx.fillText(`© ${new Date().getFullYear()} Paavai Engineering College`, 300, 810);
+
+      // Trigger Download
       const pngFile = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
       downloadLink.download = `PEC-Pass-${id}.png`;
-      downloadLink.href = `${pngFile}`;
+      downloadLink.href = pngFile;
       downloadLink.click();
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    });
   };
 
   return (
