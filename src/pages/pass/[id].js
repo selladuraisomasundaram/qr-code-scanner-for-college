@@ -23,7 +23,12 @@ export default function DigitalPass() {
     const svg = document.getElementById("QRCode");
     if (!svg) return;
     
-    const svgData = new XMLSerializer().serializeToString(svg);
+    // Clone the SVG and set explicit width/height to prevent scaling distortion when drawn on Canvas
+    const svgClone = svg.cloneNode(true);
+    svgClone.setAttribute("width", "256");
+    svgClone.setAttribute("height", "256");
+    
+    const svgData = new XMLSerializer().serializeToString(svgClone);
     const qrSrc = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
 
     const loadImage = (src, isCrossOrigin = false) => {
