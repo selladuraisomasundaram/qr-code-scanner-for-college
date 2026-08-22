@@ -21,8 +21,6 @@ export default function Scan() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState("");
-  const [isCustom, setIsCustom] = useState(false);
-  const [customEvent, setCustomEvent] = useState("");
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
 
   useEffect(() => {
@@ -44,14 +42,7 @@ export default function Scan() {
       // Load saved event selection from localStorage
       const storedEvent = localStorage.getItem("selectedEvent");
       if (storedEvent) {
-        if (storedEvent.startsWith("custom:")) {
-          const val = storedEvent.replace("custom:", "");
-          setIsCustom(true);
-          setSelectedEvent("custom");
-          setCustomEvent(val);
-        } else {
-          setSelectedEvent(storedEvent);
-        }
+        setSelectedEvent(storedEvent);
       }
 
       // Fetch dynamic departments and events map from Google Sheet
@@ -85,7 +76,6 @@ export default function Scan() {
     // Clear event selection when department changes
     setSelectedEvent("");
     localStorage.removeItem("selectedEvent");
-    setIsCustom(false);
     
     if (dept && departmentsMap[dept]) {
       setEvents(departmentsMap[dept]);
@@ -96,18 +86,7 @@ export default function Scan() {
 
   const handleEventChange = (val) => {
     setSelectedEvent(val);
-    if (val === "custom") {
-      setIsCustom(true);
-      localStorage.setItem("selectedEvent", `custom:${customEvent}`);
-    } else {
-      setIsCustom(false);
-      localStorage.setItem("selectedEvent", val);
-    }
-  };
-
-  const handleCustomEventChange = (val) => {
-    setCustomEvent(val);
-    localStorage.setItem("selectedEvent", `custom:${val}`);
+    localStorage.setItem("selectedEvent", val);
   };
 
   const handleScan = (result, error) => {
@@ -130,7 +109,7 @@ export default function Scan() {
     setStatus("submitting");
     const loadingToast = toast.loading("Verifying ticket...");
     const eventToSend = role === "event_manager"
-      ? (isCustom ? customEvent : selectedEvent)
+      ? selectedEvent
       : undefined;
 
     if (role === "event_manager" && !selectedDepartment) {
@@ -243,19 +222,8 @@ export default function Scan() {
                           </option>
                         ))
                       )}
-                      <option value="custom">Custom/Other Event...</option>
                     </select>
                   </div>
-
-                {isCustom && (
-                  <input
-                    type="text"
-                    placeholder="Enter custom event name"
-                    value={customEvent}
-                    onChange={(e) => handleCustomEventChange(e.target.value)}
-                    className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 mt-2"
-                  />
-                )}
               </div>
               </>
             )}

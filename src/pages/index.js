@@ -49,7 +49,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`grid grid-cols-1 ${role === 'event_manager' ? 'md:grid-cols-2' : 'max-w-sm'} gap-6 mt-12 mx-auto`}>
+          <div className="max-w-sm mt-12 mx-auto">
             <Link
               href="/scan"
               className="group relative flex flex-col items-center p-8 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-orange-100"
@@ -62,21 +62,6 @@ export default function Home() {
               <span className="text-2xl font-bold text-gray-800">Scan Entry</span>
               <p className="text-gray-500 text-sm mt-2">Verify participant QR codes</p>
             </Link>
-
-            {role === "event_manager" && (
-              <Link
-                href="/register"
-                className="group relative flex flex-col items-center p-8 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-orange-100"
-              >
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-gray-800">Register</span>
-                <p className="text-gray-500 text-sm mt-2">Add new participant manually</p>
-              </Link>
-            )}
           </div>
 
           <button

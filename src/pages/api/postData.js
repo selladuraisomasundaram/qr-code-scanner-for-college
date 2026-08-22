@@ -20,39 +20,16 @@ export default async function handler(req, res) {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-  // GET: Fetch dynamic list of events grouped by department from "Events" sheet
+  // GET: Fetch hardcoded departments and event lists for trial process (CSE, ECE, AGRI, CYBER)
   if (req.method === "GET") {
-    try {
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "Events!A:B", // Assuming Col A: Department, Col B: Event Name
-      });
-
-      const rows = response.data.values;
-      if (!rows || rows.length <= 1) {
-        // Fallback if sheet is empty or doesn't exist
-        return res.status(200).json({ 
-          departments: { "General": ["Main Event"] } 
-        });
+    return res.status(200).json({
+      departments: {
+        "CSE": ["Event A", "Event B"],
+        "ECE": ["Event C", "Event D"],
+        "AGRI": ["Event E", "Event F"],
+        "CYBER": ["Event G", "Event H"]
       }
-
-      const departments = {};
-      // Skip header row
-      for (let i = 1; i < rows.length; i++) {
-        const [dept, event] = rows[i];
-        if (dept && event) {
-          if (!departments[dept]) departments[dept] = [];
-          departments[dept].push(event);
-        }
-      }
-
-      return res.status(200).json({ departments });
-    } catch (error) {
-      console.error("Error fetching events sheet:", error.message);
-      return res.status(200).json({ 
-        departments: { "Error": ["Check 'Events' sheet exists"] } 
-      });
-    }
+    });
   }
 
   // POST: Verify scanned ticket ID and check in
