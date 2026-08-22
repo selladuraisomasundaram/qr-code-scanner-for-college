@@ -54,12 +54,12 @@ export default function DigitalPass() {
   const downloadQR = () => {
     const svg = document.getElementById("QRCode");
     if (!svg) return;
-    
+
     // Clone the SVG and set explicit width/height to prevent scaling distortion when drawn on Canvas
     const svgClone = svg.cloneNode(true);
     svgClone.setAttribute("width", "256");
     svgClone.setAttribute("height", "256");
-    
+
     const svgData = new XMLSerializer().serializeToString(svgClone);
     const qrSrc = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
 
@@ -213,7 +213,7 @@ export default function DigitalPass() {
       // Draw Participant Department
       if (participant?.department) {
         ctx.fillStyle = "#ea580c";
-        ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
+        ctx.font = "bold 16px system-ui, -apple-system, sans-serif";
         ctx.fillText(participant.department.toUpperCase(), 300, 470);
       }
 
@@ -305,10 +305,10 @@ export default function DigitalPass() {
           <div className="mb-6 flex flex-col items-center">
             <div className="w-24 h-24 bg-gray-50 rounded-full overflow-hidden border-4 border-orange-500/20 shadow-md mb-3 flex items-center justify-center">
               {participant?.photoUrl ? (
-                <img 
-                  src={`/api/photo?url=${encodeURIComponent(participant.photoUrl)}`} 
-                  alt={participant.name} 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={`/api/photo?url=${encodeURIComponent(participant.photoUrl)}`}
+                  alt={participant.name}
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-600">
@@ -320,27 +320,27 @@ export default function DigitalPass() {
             </div>
             <h2 className="text-xl font-extrabold text-gray-800">{participant?.name || "Participant"}</h2>
             {participant?.department && (
-              <p className="text-xs text-orange-600 font-bold uppercase tracking-wider mt-1">{participant.department}</p>
+              <p className="text-sm text-orange-600 font-bold uppercase tracking-wider mt-1.5">{participant.department}</p>
             )}
           </div>
 
           <div className="p-4 bg-white border-2 border-orange-50 rounded-2xl mb-6 shadow-inner">
-            <QRCode 
+            <QRCode
               id="QRCode"
-              value={id} 
-              size={200} 
+              value={id}
+              size={200}
               level="H"
               className="mx-auto"
             />
           </div>
-          
+
           <div className="mb-8">
             <p className="text-gray-400 text-xs uppercase font-bold mb-1 tracking-wider">Unique Entry ID</p>
             <p className="text-2xl font-mono font-bold text-gray-800 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">{id}</p>
           </div>
 
           <div className="w-full space-y-3">
-            <button 
+            <button
               onClick={downloadQR}
               className="w-full bg-orange-600 text-white font-bold py-4 rounded-xl hover:bg-orange-700 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95"
             >
@@ -350,23 +350,23 @@ export default function DigitalPass() {
               Download Pass
             </button>
 
-            <button 
+            <button
               onClick={shareToWhatsApp}
               className="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95"
             >
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.29-4.171c1.589.943 3.503 1.441 5.451 1.442 5.454 0 9.895-4.442 9.898-9.896.002-2.646-1.03-5.132-2.905-7.008-1.875-1.875-4.361-2.903-7.006-2.903-5.459 0-9.896 4.442-9.899 9.897-.001 2.123.543 4.191 1.574 5.997l-.998 3.648 3.735-.98z"/>
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.29-4.171c1.589.943 3.503 1.441 5.451 1.442 5.454 0 9.895-4.442 9.898-9.896.002-2.646-1.03-5.132-2.905-7.008-1.875-1.875-4.361-2.903-7.006-2.903-5.459 0-9.896 4.442-9.899 9.897-.001 2.123.543 4.191 1.574 5.997l-.998 3.648 3.735-.98z" />
               </svg>
               Share to WhatsApp
             </button>
           </div>
-          
+
           <p className="mt-6 text-gray-400 text-[10px] leading-relaxed">
-            Please present this QR code at the entry gate for verification. 
+            Please present this QR code at the entry gate for verification.
           </p>
         </div>
       </div>
-      
+
       <footer className="mt-8 text-gray-400 text-xs flex flex-col items-center gap-2">
         <p>© {new Date().getFullYear()} Paavai Engineering College</p>
       </footer>
