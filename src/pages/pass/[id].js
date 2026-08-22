@@ -106,7 +106,7 @@ export default function DigitalPass() {
 
       // Set dimension for expanded height to fit photo and details nicely
       canvas.width = 600;
-      canvas.height = 1000;
+      canvas.height = 1010;
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
@@ -114,7 +114,7 @@ export default function DigitalPass() {
       // Draw Card Base
       ctx.save();
       ctx.fillStyle = "#ffffff";
-      drawRoundRect(ctx, 0, 0, 600, 1000, 32);
+      drawRoundRect(ctx, 0, 0, 600, 1010, 32);
       ctx.fill();
       ctx.clip();
 
@@ -203,48 +203,55 @@ export default function DigitalPass() {
       }
       ctx.restore();
 
-      // Draw Participant Name (Email removed)
+      // Draw Participant Name
       ctx.fillStyle = "#1f2937";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
       ctx.fillText(participant?.name || "Participant Name", 300, 440);
 
+      // Draw Participant Department
+      if (participant?.department) {
+        ctx.fillStyle = "#ea580c";
+        ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
+        ctx.fillText(participant.department.toUpperCase(), 300, 470);
+      }
+
       // Draw QR Code Container Box
       ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = "#fff7ed";
       ctx.lineWidth = 4;
-      drawRoundRect(ctx, 175, 485, 250, 250, 20);
+      drawRoundRect(ctx, 175, 510, 250, 250, 20);
       ctx.fill();
       ctx.stroke();
 
       // Draw QR Code
       if (qrImg) {
-        ctx.drawImage(qrImg, 190, 500, 220, 220);
+        ctx.drawImage(qrImg, 190, 525, 220, 220);
       }
 
       // Draw Unique Entry ID Block
       ctx.fillStyle = "#9ca3af";
       ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
-      ctx.fillText("UNIQUE ENTRY ID", 300, 770);
+      ctx.fillText("UNIQUE ENTRY ID", 300, 790);
 
       ctx.fillStyle = "#f9fafb";
       ctx.strokeStyle = "#f3f4f6";
       ctx.lineWidth = 2;
-      drawRoundRect(ctx, 100, 795, 400, 60, 12);
+      drawRoundRect(ctx, 100, 815, 400, 60, 12);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = "#1f2937";
       ctx.font = "bold 20px monospace";
-      ctx.fillText(id, 300, 825);
+      ctx.fillText(id, 300, 845);
 
       // Draw Footer Text
       ctx.fillStyle = "#9ca3af";
       ctx.font = "12px system-ui, -apple-system, sans-serif";
-      ctx.fillText("Please present this QR code at the entry gate for verification.", 300, 900);
+      ctx.fillText("Please present this QR code at the entry gate for verification.", 300, 915);
 
-      ctx.fillText(`© ${new Date().getFullYear()} Paavai Engineering College`, 300, 940);
+      ctx.fillText(`© ${new Date().getFullYear()} Paavai Engineering College`, 300, 955);
 
       // Trigger Download
       const pngFile = canvas.toDataURL("image/png");
@@ -312,6 +319,9 @@ export default function DigitalPass() {
               )}
             </div>
             <h2 className="text-xl font-extrabold text-gray-800">{participant?.name || "Participant"}</h2>
+            {participant?.department && (
+              <p className="text-xs text-orange-600 font-bold uppercase tracking-wider mt-1">{participant.department}</p>
+            )}
           </div>
 
           <div className="p-4 bg-white border-2 border-orange-50 rounded-2xl mb-6 shadow-inner">
