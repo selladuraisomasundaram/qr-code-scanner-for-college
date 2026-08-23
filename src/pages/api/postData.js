@@ -20,20 +20,52 @@ export default async function handler(req, res) {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-  // GET: Fetch hardcoded departments and event lists for trial process (CSE, ECE, AGRI, CYBER)
+  // GET: Fetch hardcoded departments, workshop events, and common events for PEC-Techfinix’26
   if (req.method === "GET") {
     return res.status(200).json({
+      commonEvents: [
+        "PAPER PRESENTATION", 
+        "PROJECT EXPO", 
+        "TREASURE HUNT",
+        "PHOTOGRAPHY",
+        "SOLO SINGING",
+        "ADAPTUNE (SOLO DANCE)",
+        "SHORT FILM CONTEST",
+        "CHANNEL SURFING"
+      ],
+      workshopEvents: ["Edge AI and TinyML for Intelligent IoT"],
       departments: {
-        "CSE": ["Event A", "Event B"],
-        "ECE": ["Event C", "Event D"],
-        "AGRI": ["Event E", "Event F"],
-        "CYBER": ["Event G", "Event H"]
+        "AERO": ["Drone Racing League", "Glider Competition", "Parachute Diving"],
+        "Cyber Security": ["Cyber Myth Busters", "Encryption Puzzle Race", "Code Breaker"],
+        "IT": ["Blind Coding", "Rapid Replica", "Master The Prompt"],
+        "Civil": ["Straw Tower Challenges", "Eco - Brick / Cube Contest", "Error Spotter"],
+        "IoT": ["Circuit Draft", "Mind Maze", "VOLTX ARENA"],
+        "CSE": ["Terminal Velocity", "The Architect's Trial", "Source Code Forensics"],
+        "Agri": ["AgriX Vision", "Therma Chain", "Power Hitch Plays"],
+        "AIDS": ["Data Escape Room", "Train Your AI in 30 Minutes", "AI Ethics Court"],
+        "AIML": ["AI Vision Craft", "AI TRI Quest", "AI Spin and Solve"],
+        "ECE": ["Signal Spy", "Smart Fault Hunter", "Zero Power Innovation"],
+        "Chemical": ["Reactathon", "Case Study Analysis", "Periodic Table Bingo"],
+        "Mech": ["Techinical Quiz", "CAD Contest", "Water Rocketey"],
+        "Food Tech": ["Food Forensic", "Fluxguard", "Deductra"],
+        "Pharma": ["Pharma Storytelling Event", "One Minute Health Talk", "Ad Making"],
+        "R&A": ["Track Bottle Challenge", "Ladder Logic League", "ROBO AI Posted Expo"],
+        "Bio Tech": ["Docking Challenge", "Experiment Detection Challenge", "Bio Molecule Puzzle"],
+        "BME": ["Bio Medical Quiz Bowl", "Bio Medical Circuit Debugging", "Med Poster"],
+        "MCT": ["Circuit Design Challenges", "CAD Modelling Competition", "AI Model Building Challenge"],
+        "MCA": ["Idea Presenatation Summit", "Web Craft", "Reverse Coding"],
+        "MBA": ["Roll Play", "Case Study", "Campus Stories"],
+        "EEE": ["Power AI", "Electro Drive", "VoltQuest"]
       }
     });
   }
 
-  // POST: Verify scanned ticket ID and check in
-  const { data: scannedId, event: selectedEvent } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
+  // POST: Verify scanned ticket ID and check in for specific category
+  const { data: scannedId, event: selectedEvent, category } = req.body;
 
   if (!scannedId) {
     return res.status(400).json({ message: "No ID provided" });
@@ -45,7 +77,7 @@ export default async function handler(req, res) {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:Z`,
+      range: `${sheetName}!A:AZ`,
     });
 
     const rows = response.data.values;
@@ -54,12 +86,36 @@ export default async function handler(req, res) {
     }
 
     const headers = rows[0].map(h => h.toString().toLowerCase().trim());
-    const idIndex = headers.findIndex(h => h.includes("unique id") || h === "id");
-    const statusIndex = headers.findIndex(h => h.includes("status") && !h.includes("event"));
-    const eventIndex = headers.findIndex(h => h.includes("event") && !h.includes("status"));
-    const nameIndex = headers.findIndex(h => h.includes("name") || h.includes("full name"));
-    const event1StatusIndex = headers.findIndex(h => h.includes("event 1 status") || h.includes("event1 status") || h.includes("event 1"));
-    const event2StatusIndex = headers.findIndex(h => h.includes("event 2 status") || h.includes("event2 status") || h.includes("event 2"));
+    
+    // Find index locations dynamically
+    const idIndexRaw = headers.findIndex(h => h === "unique id" || h === "id");
+    const nameIndexRaw = headers.findIndex(h => h.includes("name"));
+    const statusIndexRaw = headers.findIndex(h => h === "status");
+    
+    const commonEventIndexRaw = headers.findIndex(h => h === "common event");
+    const workshopParticipationIndexRaw = headers.findIndex(h => h.includes("workshop") && !h.includes("status"));
+    const deptEventIndexRaw = headers.findIndex(h => h.includes("department events") || h.includes("dept events"));
+
+    const common1StatusIndexRaw = headers.findIndex(h => h.includes("common event 1 status") || h.includes("common event 1"));
+    const common2StatusIndexRaw = headers.findIndex(h => h.includes("common event 2 status") || h.includes("common event 2"));
+    const workshopStatusIndexRaw = headers.findIndex(h => h.includes("workshop status"));
+    const dept1StatusIndexRaw = headers.findIndex(h => h.includes("dept event 1 status") || h.includes("dept event 1") || h.includes("department event 1"));
+    const dept2StatusIndexRaw = headers.findIndex(h => h.includes("dept event 2 status") || h.includes("dept event 2") || h.includes("department event 2"));
+
+    // Fallbacks to default production columns (Columns U through AB) if headers don't match
+    const idIndex = idIndexRaw !== -1 ? idIndexRaw : 20; // Column U
+    const nameIndex = nameIndexRaw !== -1 ? nameIndexRaw : 4; // Column E
+    const statusIndex = statusIndexRaw !== -1 ? statusIndexRaw : 21; // Column V
+    
+    const commonEventIndex = commonEventIndexRaw !== -1 ? commonEventIndexRaw : 8; // Column I
+    const workshopParticipationIndex = workshopParticipationIndexRaw !== -1 ? workshopParticipationIndexRaw : 9; // Column J
+    const deptEventIndex = deptEventIndexRaw !== -1 ? deptEventIndexRaw : 10; // Column K
+
+    const common1StatusIndex = common1StatusIndexRaw !== -1 ? common1StatusIndexRaw : 22; // Column W
+    const common2StatusIndex = common2StatusIndexRaw !== -1 ? common2StatusIndexRaw : 23; // Column X
+    const workshopStatusIndex = workshopStatusIndexRaw !== -1 ? workshopStatusIndexRaw : 24; // Column Y
+    const dept1StatusIndex = dept1StatusIndexRaw !== -1 ? dept1StatusIndexRaw : 26; // Column AA (Skipping Z)
+    const dept2StatusIndex = dept2StatusIndexRaw !== -1 ? dept2StatusIndexRaw : 27; // Column AB
 
     let rowIndex = -1;
     let userData = null;
@@ -70,7 +126,6 @@ export default async function handler(req, res) {
         userData = {
           name: rows[i][nameIndex] || "Unknown Participant",
           status: rows[i][statusIndex] || "Pending",
-          events: eventIndex !== -1 ? rows[i][eventIndex] || "" : "",
         };
         break;
       }
@@ -80,44 +135,15 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Invalid Ticket: ID not found." });
     }
 
-    if (selectedEvent) {
-      if (userData.status !== "Checked In") {
-        return res.status(400).json({ message: "Access Denied: Must check in at Main Gate first.", name: userData.name });
-      }
-      
-      const participantEvents = userData.events.toString().split(",").map(e => e.trim().toLowerCase());
-      const targetEvent = selectedEvent.toString().trim().toLowerCase();
-      
-      if (!participantEvents.some(pe => pe === targetEvent)) {
-        return res.status(400).json({ 
-          message: `Access Denied: Not registered for "${selectedEvent}".`,
-          name: userData.name 
-        });
-      }
+    const currentRow = rows[rowIndex - 1] || [];
 
-      const currentRow = rows[rowIndex - 1] || [];
-      const event1Val = currentRow[event1StatusIndex] || "";
-      const event2Val = currentRow[event2StatusIndex] || "";
+    // All event check-ins (except Main Gate) require Main Gate check-in first
+    if (category !== "gate" && userData.status !== "Checked In") {
+      return res.status(400).json({ message: "Access Denied: Must check in at Main Gate first.", name: userData.name });
+    }
 
-      if (event1Val.toLowerCase() === targetEvent || event2Val.toLowerCase() === targetEvent) {
-        return res.status(200).json({ message: `Already checked in for ${selectedEvent}!`, name: userData.name });
-      }
-
-      if (event1Val && event2Val) {
-        return res.status(400).json({ message: "Access Denied: Max 2 events reached.", name: userData.name });
-      }
-
-      const targetColIndex = !event1Val ? event1StatusIndex : event2StatusIndex;
-      const colLetter = String.fromCharCode(65 + targetColIndex);
-      
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!${colLetter}${rowIndex}`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: [[selectedEvent]] },
-      });
-
-    } else {
+    if (category === "gate" || !category) {
+      // Main Gate check-in
       if (userData.status === "Checked In") {
         return res.status(400).json({ message: "Already checked in at Main Gate.", name: userData.name });
       }
@@ -129,14 +155,110 @@ export default async function handler(req, res) {
         valueInputOption: "USER_ENTERED",
         requestBody: { values: [["Checked In"]] },
       });
+
+      return res.status(200).json({ message: "Main Gate Check-in Successful!", name: userData.name });
+
+    } else if (category === "workshop") {
+      // Workshop Check-in
+      const targetWorkshop = selectedEvent || "Edge AI and TinyML for Intelligent IoT";
+      const workshopRegistered = currentRow[workshopParticipationIndex] || "";
+
+      if (workshopRegistered.toString().trim().toLowerCase() !== "yes") {
+        return res.status(400).json({ message: `Access Denied: Not registered for Workshop.`, name: userData.name });
+      }
+
+      const workshopStatusVal = currentRow[workshopStatusIndex] || "";
+      if (workshopStatusVal.toLowerCase() === "checked in" || workshopStatusVal.toLowerCase() === "yes" || workshopStatusVal.trim()) {
+        return res.status(200).json({ message: "Already checked in for Workshop!", name: userData.name });
+      }
+
+      const colLetter = String.fromCharCode(65 + workshopStatusIndex);
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetName}!${colLetter}${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [["Checked In"]] },
+      });
+
+      return res.status(200).json({ message: "Workshop Check-in Approved!", name: userData.name });
+
+    } else if (category === "common") {
+      // Common Event Check-in
+      if (!selectedEvent) {
+        return res.status(400).json({ message: "Please select an event." });
+      }
+
+      const registeredCommonText = currentRow[commonEventIndex] || "";
+      const registeredCommons = registeredCommonText.split(",").map(e => e.trim().toUpperCase());
+      const targetEvent = selectedEvent.trim().toUpperCase();
+
+      if (!registeredCommons.includes(targetEvent)) {
+        return res.status(400).json({ message: `Access Denied: Not registered for "${selectedEvent}".`, name: userData.name });
+      }
+
+      const common1Val = currentRow[common1StatusIndex] || "";
+      const common2Val = currentRow[common2StatusIndex] || "";
+
+      if (common1Val.toUpperCase() === targetEvent || common2Val.toUpperCase() === targetEvent) {
+        return res.status(200).json({ message: `Already checked in for ${selectedEvent}!`, name: userData.name });
+      }
+
+      if (common1Val && common2Val) {
+        return res.status(400).json({ message: "Access Denied: Maximum 2 Common Events reached.", name: userData.name });
+      }
+
+      const targetColIndex = !common1Val ? common1StatusIndex : common2StatusIndex;
+      const colLetter = String.fromCharCode(65 + targetColIndex);
+      
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetName}!${colLetter}${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [[selectedEvent]] },
+      });
+
+      return res.status(200).json({ message: `Approved for ${selectedEvent}!`, name: userData.name });
+
+    } else if (category === "dept") {
+      // Department Event Check-in
+      if (!selectedEvent) {
+        return res.status(400).json({ message: "Please select an event." });
+      }
+
+      const registeredDeptText = currentRow[deptEventIndex] || "";
+      const registeredDepts = registeredDeptText.split(",").map(e => e.trim().toUpperCase());
+      const targetEvent = selectedEvent.trim().toUpperCase();
+
+      if (!registeredDepts.includes(targetEvent)) {
+        return res.status(400).json({ message: `Access Denied: Not registered for "${selectedEvent}".`, name: userData.name });
+      }
+
+      const dept1Val = currentRow[dept1StatusIndex] || "";
+      const dept2Val = currentRow[dept2StatusIndex] || "";
+
+      if (dept1Val.toUpperCase() === targetEvent || dept2Val.toUpperCase() === targetEvent) {
+        return res.status(200).json({ message: `Already checked in for ${selectedEvent}!`, name: userData.name });
+      }
+
+      if (dept1Val && dept2Val) {
+        return res.status(400).json({ message: "Access Denied: Maximum 2 Department Events reached.", name: userData.name });
+      }
+
+      const targetColIndex = !dept1Val ? dept1StatusIndex : dept2StatusIndex;
+      const colLetter = String.fromCharCode(65 + targetColIndex);
+      
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetName}!${colLetter}${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [[selectedEvent]] },
+      });
+
+      return res.status(200).json({ message: `Approved for ${selectedEvent}!`, name: userData.name });
     }
 
-    return res.status(200).json({ 
-      message: selectedEvent ? `Approved for ${selectedEvent}!` : "Main Gate Check-in Successful!", 
-      name: userData.name 
-    });
-
   } catch (error) {
+    console.error("Error in postData API:", error);
     return res.status(500).json({ message: "Google Sheets error", error: error.message });
   }
 }
