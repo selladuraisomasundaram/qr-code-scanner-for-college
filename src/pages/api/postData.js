@@ -1,5 +1,25 @@
 import { google } from "googleapis";
 
+const cleanString = (str) => {
+  if (!str) return "";
+  let s = str.toString().replace(/\s*\(.*?\)\s*/g, ""); // Remove parenthesized content like (Cyber Security)
+  s = s.replace(/[^a-zA-Z0-9]/g, "").toLowerCase(); // Remove spaces, hyphens, and slashes
+  if (s.endsWith("s") && s.length > 3) {
+    s = s.slice(0, -1); // Strip trailing 's' to match singular and plural (Busters vs Buster)
+  }
+  return s;
+};
+
+const getColumnLetter = (colIndex) => {
+  let temp = colIndex;
+  let letter = "";
+  while (temp >= 0) {
+    letter = String.fromCharCode((temp % 26) + 65) + letter;
+    temp = Math.floor(temp / 26) - 1;
+  }
+  return letter;
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
@@ -86,15 +106,19 @@ export default async function handler(req, res) {
     }
 
     const headers = rows[0].map(h => h.toString().toLowerCase().trim());
-    
+
     // Find index locations dynamically
-    const idIndexRaw = headers.findIndex(h => h === "unique id" || h === "id");
+    const idIndexRaw = headers.findIndex(h => h.includes("unique id") || h === "id");
     const nameIndexRaw = headers.findIndex(h => h.includes("name"));
-    const statusIndexRaw = headers.findIndex(h => h === "status");
+    const statusIndexRaw = headers.findIndex(h => h === "status" && !h.includes("event") && !h.includes("workshop"));
     
-    const commonEventIndexRaw = headers.findIndex(h => h === "common event");
+    const commonEventIndexRaw = headers.findIndex(h => h.includes("common event") && !h.includes("status"));
     const workshopParticipationIndexRaw = headers.findIndex(h => h.includes("workshop") && !h.includes("status"));
-    const deptEventIndexRaw = headers.findIndex(h => h.includes("department events") || h.includes("dept events"));
+    const deptEventIndexRaw = headers.findIndex(h => 
+      !h.includes("common") &&
+      (h.includes("department event") || h.includes("dept event") || h.includes("select events in which you are participating")) && 
+      !h.includes("status")
+    );
 
     const common1StatusIndexRaw = headers.findIndex(h => h.includes("common event 1 status") || h.includes("common event 1"));
     const common2StatusIndexRaw = headers.findIndex(h => h.includes("common event 2 status") || h.includes("common event 2"));
@@ -102,20 +126,20 @@ export default async function handler(req, res) {
     const dept1StatusIndexRaw = headers.findIndex(h => h.includes("dept event 1 status") || h.includes("dept event 1") || h.includes("department event 1"));
     const dept2StatusIndexRaw = headers.findIndex(h => h.includes("dept event 2 status") || h.includes("dept event 2") || h.includes("department event 2"));
 
-    // Fallbacks to default production columns (Columns U through AB) if headers don't match
+    // Fallbacks to default production columns (Columns U through [) if headers don't match
     const idIndex = idIndexRaw !== -1 ? idIndexRaw : 20; // Column U
-    const nameIndex = nameIndexRaw !== -1 ? nameIndexRaw : 4; // Column E
+    const nameIndex = nameIndexRaw !== -1 ? nameIndexRaw : 2; // Column C
     const statusIndex = statusIndexRaw !== -1 ? statusIndexRaw : 21; // Column V
     
-    const commonEventIndex = commonEventIndexRaw !== -1 ? commonEventIndexRaw : 8; // Column I
-    const workshopParticipationIndex = workshopParticipationIndexRaw !== -1 ? workshopParticipationIndexRaw : 9; // Column J
-    const deptEventIndex = deptEventIndexRaw !== -1 ? deptEventIndexRaw : 10; // Column K
+    const commonEventIndex = commonEventIndexRaw !== -1 ? commonEventIndexRaw : 9; // Column J
+    const workshopParticipationIndex = workshopParticipationIndexRaw !== -1 ? workshopParticipationIndexRaw : 10; // Column K
+    const deptEventIndex = deptEventIndexRaw !== -1 ? deptEventIndexRaw : 11; // Column L
 
     const common1StatusIndex = common1StatusIndexRaw !== -1 ? common1StatusIndexRaw : 22; // Column W
     const common2StatusIndex = common2StatusIndexRaw !== -1 ? common2StatusIndexRaw : 23; // Column X
     const workshopStatusIndex = workshopStatusIndexRaw !== -1 ? workshopStatusIndexRaw : 24; // Column Y
-    const dept1StatusIndex = dept1StatusIndexRaw !== -1 ? dept1StatusIndexRaw : 26; // Column AA (Skipping Z)
-    const dept2StatusIndex = dept2StatusIndexRaw !== -1 ? dept2StatusIndexRaw : 27; // Column AB
+    const dept1StatusIndex = dept1StatusIndexRaw !== -1 ? dept1StatusIndexRaw : 25; // Column Z
+    const dept2StatusIndex = dept2StatusIndexRaw !== -1 ? dept2StatusIndexRaw : 26; // Column [
 
     let rowIndex = -1;
     let userData = null;
@@ -137,6 +161,11 @@ export default async function handler(req, res) {
 
     const currentRow = rows[rowIndex - 1] || [];
 
+    // Debug logs to trace columns
+    console.log(`[postData API] category: ${category}, event: ${selectedEvent}`);
+    console.log(`[postData API] commonEventIndex: ${commonEventIndex} ("${headers[commonEventIndex]}"), deptEventIndex: ${deptEventIndex} ("${headers[deptEventIndex]}")`);
+    console.log(`[postData API] row common text: "${currentRow[commonEventIndex]}", row dept text: "${currentRow[deptEventIndex]}"`);
+
     // All event check-ins (except Main Gate) require Main Gate check-in first
     if (category !== "gate" && userData.status !== "Checked In") {
       return res.status(400).json({ message: "Access Denied: Must check in at Main Gate first.", name: userData.name });
@@ -145,10 +174,10 @@ export default async function handler(req, res) {
     if (category === "gate" || !category) {
       // Main Gate check-in
       if (userData.status === "Checked In") {
-        return res.status(400).json({ message: "Already checked in at Main Gate.", name: userData.name });
+        return res.status(400).json({ message: "Main Gate Entry: Participant has already checked in at the Main Gate.", name: userData.name });
       }
 
-      const colLetter = String.fromCharCode(65 + statusIndex);
+      const colLetter = getColumnLetter(statusIndex);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: `${sheetName}!${colLetter}${rowIndex}`,
@@ -169,10 +198,10 @@ export default async function handler(req, res) {
 
       const workshopStatusVal = currentRow[workshopStatusIndex] || "";
       if (workshopStatusVal.toLowerCase() === "checked in" || workshopStatusVal.toLowerCase() === "yes" || workshopStatusVal.trim()) {
-        return res.status(200).json({ message: "Already checked in for Workshop!", name: userData.name });
+        return res.status(400).json({ message: `Workshop Check-in: Participant has already checked in for "${targetWorkshop}".`, name: userData.name });
       }
 
-      const colLetter = String.fromCharCode(65 + workshopStatusIndex);
+      const colLetter = getColumnLetter(workshopStatusIndex);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: `${sheetName}!${colLetter}${rowIndex}`,
@@ -189,26 +218,30 @@ export default async function handler(req, res) {
       }
 
       const registeredCommonText = currentRow[commonEventIndex] || "";
-      const registeredCommons = registeredCommonText.split(",").map(e => e.trim().toUpperCase());
-      const targetEvent = selectedEvent.trim().toUpperCase();
+      const registeredCommons = registeredCommonText.split(",");
+      const cleanTarget = cleanString(selectedEvent);
 
-      if (!registeredCommons.includes(targetEvent)) {
+      const hasRegistered = registeredCommons.some(rc => cleanString(rc) === cleanTarget);
+
+      if (!hasRegistered) {
         return res.status(400).json({ message: `Access Denied: Not registered for "${selectedEvent}".`, name: userData.name });
       }
 
       const common1Val = currentRow[common1StatusIndex] || "";
       const common2Val = currentRow[common2StatusIndex] || "";
+      const cleanCommon1 = cleanString(common1Val);
+      const cleanCommon2 = cleanString(common2Val);
 
-      if (common1Val.toUpperCase() === targetEvent || common2Val.toUpperCase() === targetEvent) {
-        return res.status(200).json({ message: `Already checked in for ${selectedEvent}!`, name: userData.name });
+      if (cleanCommon1 === cleanTarget || cleanCommon2 === cleanTarget) {
+        return res.status(400).json({ message: `Common Event: Participant has already checked in for "${selectedEvent}".`, name: userData.name });
       }
 
       if (common1Val && common2Val) {
-        return res.status(400).json({ message: "Access Denied: Maximum 2 Common Events reached.", name: userData.name });
+        return res.status(400).json({ message: "Common Event: Access Denied. Maximum of 2 Common Event check-ins reached for this participant.", name: userData.name });
       }
 
       const targetColIndex = !common1Val ? common1StatusIndex : common2StatusIndex;
-      const colLetter = String.fromCharCode(65 + targetColIndex);
+      const colLetter = getColumnLetter(targetColIndex);
       
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -226,26 +259,30 @@ export default async function handler(req, res) {
       }
 
       const registeredDeptText = currentRow[deptEventIndex] || "";
-      const registeredDepts = registeredDeptText.split(",").map(e => e.trim().toUpperCase());
-      const targetEvent = selectedEvent.trim().toUpperCase();
+      const registeredDepts = registeredDeptText.split(",");
+      const cleanTarget = cleanString(selectedEvent);
 
-      if (!registeredDepts.includes(targetEvent)) {
+      const hasRegistered = registeredDepts.some(rd => cleanString(rd) === cleanTarget);
+
+      if (!hasRegistered) {
         return res.status(400).json({ message: `Access Denied: Not registered for "${selectedEvent}".`, name: userData.name });
       }
 
       const dept1Val = currentRow[dept1StatusIndex] || "";
       const dept2Val = currentRow[dept2StatusIndex] || "";
+      const cleanDept1 = cleanString(dept1Val);
+      const cleanDept2 = cleanString(dept2Val);
 
-      if (dept1Val.toUpperCase() === targetEvent || dept2Val.toUpperCase() === targetEvent) {
-        return res.status(200).json({ message: `Already checked in for ${selectedEvent}!`, name: userData.name });
+      if (cleanDept1 === cleanTarget || cleanDept2 === cleanTarget) {
+        return res.status(400).json({ message: `Department Event: Participant has already checked in for "${selectedEvent}".`, name: userData.name });
       }
 
       if (dept1Val && dept2Val) {
-        return res.status(400).json({ message: "Access Denied: Maximum 2 Department Events reached.", name: userData.name });
+        return res.status(400).json({ message: "Department Event: Access Denied. Maximum of 2 Department Event check-ins reached for this participant.", name: userData.name });
       }
 
       const targetColIndex = !dept1Val ? dept1StatusIndex : dept2StatusIndex;
-      const colLetter = String.fromCharCode(65 + targetColIndex);
+      const colLetter = getColumnLetter(targetColIndex);
       
       await sheets.spreadsheets.values.update({
         spreadsheetId,

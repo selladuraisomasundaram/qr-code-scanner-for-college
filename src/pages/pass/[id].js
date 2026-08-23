@@ -12,6 +12,7 @@ export default function DigitalPass() {
   const [participant, setParticipant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -192,14 +193,21 @@ export default function DigitalPass() {
 
         ctx.drawImage(photoImg, sx, sy, sWidth, sHeight, x, y, size, size);
       } else {
-        // Draw placeholder avatar icon if image failed to load or is not present
-        ctx.fillStyle = "#ffedd5";
+        // Draw beautiful slate and grey silhouette avatar placeholder on the Canvas
+        ctx.fillStyle = "#f3f4f6"; // Slate-100 background
         ctx.beginPath();
         ctx.arc(300, 350, 58, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#ea580c";
-        ctx.font = "bold 48px system-ui, -apple-system, sans-serif";
-        ctx.fillText("?", 300, 350);
+
+        ctx.fillStyle = "#9ca3af"; // Gray-400 silhouette color
+        // Draw head circle
+        ctx.beginPath();
+        ctx.arc(300, 335, 20, 0, Math.PI * 2);
+        ctx.fill();
+        // Draw shoulders arc
+        ctx.beginPath();
+        ctx.arc(300, 395, 40, Math.PI, 0); // half circle pointing up
+        ctx.fill();
       }
       ctx.restore();
 
@@ -277,10 +285,7 @@ export default function DigitalPass() {
           </svg>
         </div>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Invalid Entry Pass</h2>
-        <p className="text-gray-500 text-sm mb-6">{error}</p>
-        <Link href="/" className="inline-block bg-orange-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-orange-700 transition-colors">
-          Go to Dashboard
-        </Link>
+        <p className="text-gray-500 text-sm">{error}</p>
       </div>
     </div>
   );
@@ -304,16 +309,17 @@ export default function DigitalPass() {
           {/* Participant Photo & Details */}
           <div className="mb-6 flex flex-col items-center">
             <div className="w-24 h-24 bg-gray-50 rounded-full overflow-hidden border-4 border-orange-500/20 shadow-md mb-3 flex items-center justify-center">
-              {participant?.photoUrl ? (
+              {participant?.photoUrl && !imageError ? (
                 <img
                   src={`/api/photo?url=${encodeURIComponent(participant.photoUrl)}`}
                   alt={participant.name}
                   className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-600">
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                   </svg>
                 </div>
               )}

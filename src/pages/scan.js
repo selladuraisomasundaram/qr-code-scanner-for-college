@@ -55,7 +55,10 @@ export default function Scan() {
         }
 
         // Restore from localStorage
-        const storedCategory = localStorage.getItem("selectedCategory") || "gate";
+        let storedCategory = localStorage.getItem("selectedCategory") || "gate";
+        if (activeRole === "event_manager" && storedCategory === "gate") {
+          storedCategory = "common";
+        }
         setSelectedCategory(storedCategory);
 
         if (storedCategory === "common") {
@@ -170,6 +173,16 @@ export default function Scan() {
       setParticipantName(response.data.name);
       setStatus("success");
     } catch (err) {
+      console.error("====== SCAN VERIFICATION FAILURE ======");
+      console.error("API Request Path: /api/postData");
+      console.error("Status Code:", err.response?.status || "Unknown");
+      console.error("Error Message:", err.message);
+      if (err.response?.data) {
+        console.error("Server Response Error Payload:", err.response.data);
+        console.error("Server Response Error Details:", JSON.stringify(err.response.data, null, 2));
+      }
+      console.error("=======================================");
+
       const errorMessage = err.response?.data?.message || "Failed to verify ticket";
       toast.error(errorMessage, { id: loadingToast });
       setStatus("idle");
@@ -218,7 +231,6 @@ export default function Scan() {
                       onChange={(e) => handleCategoryChange(e.target.value)}
                       className="w-full border-2 border-gray-100 focus:border-red-500 focus:ring-0 p-3.5 rounded-xl transition-all outline-none text-gray-700 bg-white font-medium"
                     >
-                      <option value="gate">Main Gate Entry</option>
                       <option value="common">Common Event</option>
                       <option value="workshop">Workshop</option>
                       <option value="dept">Department Event</option>
