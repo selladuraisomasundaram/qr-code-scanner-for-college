@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:Z`,
+      range: `${sheetName}!A:AZ`,
     });
 
     const rows = response.data.values;
@@ -47,7 +47,12 @@ export default async function handler(req, res) {
     const idIndex = headers.findIndex(h => h.includes("unique id") || h === "id");
     const nameIndex = headers.findIndex(h => h.includes("name") || h.includes("full name"));
     const emailIndex = headers.findIndex(h => h.includes("email") || h.includes("email address"));
-    const photoIndex = headers.findIndex(h => h.includes("photo") || h.includes("image") || h.includes("file") || h.includes("picture") || h.includes("upload"));
+    const photoIndex = headers.findIndex(h => 
+      (h.includes("photo") || h.includes("image") || h.includes("picture") || (h.includes("upload") && !h.includes("payment"))) &&
+      !h.includes("screenshot") &&
+      !h.includes("receipt") &&
+      !h.includes("payment")
+    );
     const deptIndex = headers.findIndex(h => h.includes("dept") || h.includes("department"));
 
     if (idIndex === -1) {
