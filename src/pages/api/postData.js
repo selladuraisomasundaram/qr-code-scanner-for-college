@@ -229,26 +229,50 @@ export default async function handler(req, res) {
 
       const common1Val = currentRow[common1StatusIndex] || "";
       const common2Val = currentRow[common2StatusIndex] || "";
-      const cleanCommon1 = cleanString(common1Val);
-      const cleanCommon2 = cleanString(common2Val);
 
-      if (cleanCommon1 === cleanTarget || cleanCommon2 === cleanTarget) {
+      // Gather all already checked-in common events
+      const checkedInCommons = [];
+      if (common1Val) {
+        common1Val.split(",").forEach(e => {
+          const cleaned = cleanString(e);
+          if (cleaned) checkedInCommons.push(cleaned);
+        });
+      }
+      if (common2Val) {
+        common2Val.split(",").forEach(e => {
+          const cleaned = cleanString(e);
+          if (cleaned) checkedInCommons.push(cleaned);
+        });
+      }
+
+      if (checkedInCommons.includes(cleanTarget)) {
         return res.status(400).json({ message: `Common Event: Participant has already checked in for "${selectedEvent}".`, name: userData.name });
       }
 
-      if (common1Val && common2Val) {
-        return res.status(400).json({ message: "Common Event: Access Denied. Maximum of 2 Common Event check-ins reached for this participant.", name: userData.name });
+      // Record the check-in
+      if (!common1Val) {
+        // Write to Common Event 1 Status
+        const colLetter = getColumnLetter(common1StatusIndex);
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${sheetName}!${colLetter}${rowIndex}`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [[selectedEvent]] },
+        });
+      } else {
+        // Write to Common Event 2 Status (append with comma if not empty)
+        let newValue = selectedEvent;
+        if (common2Val) {
+          newValue = `${common2Val}, ${selectedEvent}`;
+        }
+        const colLetter = getColumnLetter(common2StatusIndex);
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${sheetName}!${colLetter}${rowIndex}`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [[newValue]] },
+        });
       }
-
-      const targetColIndex = !common1Val ? common1StatusIndex : common2StatusIndex;
-      const colLetter = getColumnLetter(targetColIndex);
-      
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!${colLetter}${rowIndex}`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: [[selectedEvent]] },
-      });
 
       return res.status(200).json({ message: `Approved for ${selectedEvent}!`, name: userData.name });
 
