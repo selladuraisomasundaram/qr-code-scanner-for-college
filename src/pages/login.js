@@ -14,8 +14,8 @@ export default function Login() {
     
     if (role === "volunteer") {
       if (username === "Paavai" && password === "Pec@123") {
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("role", "volunteer");
+        sessionStorage.setItem("isLoggedIn", "true");
+        sessionStorage.setItem("role", "volunteer");
         toast.success("Volunteer login successful!");
         router.push("/");
       } else {
@@ -23,8 +23,8 @@ export default function Login() {
       }
     } else {
       if (username === "Paavai" && password === "Pec@123") {
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("role", "event_manager");
+        sessionStorage.setItem("isLoggedIn", "true");
+        sessionStorage.setItem("role", "event_manager");
         toast.success("Event Manager login successful!");
         router.push("/");
       } else {

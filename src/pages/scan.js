@@ -29,14 +29,14 @@ export default function Scan() {
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const isLoggedIn = sessionStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
       router.push("/login");
       return;
     }
     setAuthorized(true);
 
-    const activeRole = localStorage.getItem("role") || "volunteer";
+    const activeRole = sessionStorage.getItem("role") || "volunteer";
     setRole(activeRole);
 
     // Fetch dynamic departments and events map from backend
@@ -54,8 +54,8 @@ export default function Scan() {
           setWorkshopEventsList(response.data.workshopEvents);
         }
 
-        // Restore from localStorage
-        let storedCategory = localStorage.getItem("selectedCategory") || "gate";
+        // Restore from sessionStorage
+        let storedCategory = sessionStorage.getItem("selectedCategory") || "gate";
         if (activeRole === "event_manager" && storedCategory === "gate") {
           storedCategory = "common";
         }
@@ -66,14 +66,14 @@ export default function Scan() {
         } else if (storedCategory === "workshop") {
           setEvents(response.data.workshopEvents || []);
         } else if (storedCategory === "dept") {
-          const storedDept = localStorage.getItem("selectedDepartment") || "";
+          const storedDept = sessionStorage.getItem("selectedDepartment") || "";
           setSelectedDepartment(storedDept);
           if (storedDept && response.data.departments[storedDept]) {
             setEvents(response.data.departments[storedDept]);
           }
         }
 
-        const storedEvent = localStorage.getItem("selectedEvent") || "";
+        const storedEvent = sessionStorage.getItem("selectedEvent") || "";
         setSelectedEvent(storedEvent);
       } catch (err) {
         console.error("Failed to load events:", err);
@@ -87,11 +87,11 @@ export default function Scan() {
 
   const handleCategoryChange = (cat) => {
     setSelectedCategory(cat);
-    localStorage.setItem("selectedCategory", cat);
+    sessionStorage.setItem("selectedCategory", cat);
     setSelectedEvent("");
-    localStorage.removeItem("selectedEvent");
+    sessionStorage.removeItem("selectedEvent");
     setSelectedDepartment("");
-    localStorage.removeItem("selectedDepartment");
+    sessionStorage.removeItem("selectedDepartment");
 
     if (cat === "common") {
       setEvents(commonEventsList);
@@ -100,7 +100,7 @@ export default function Scan() {
       // Auto-select workshop if there's only one
       if (workshopEventsList.length > 0) {
         setSelectedEvent(workshopEventsList[0]);
-        localStorage.setItem("selectedEvent", workshopEventsList[0]);
+        sessionStorage.setItem("selectedEvent", workshopEventsList[0]);
       }
     } else {
       setEvents([]);
@@ -109,11 +109,11 @@ export default function Scan() {
 
   const handleDepartmentChange = (dept) => {
     setSelectedDepartment(dept);
-    localStorage.setItem("selectedDepartment", dept);
+    sessionStorage.setItem("selectedDepartment", dept);
     
     // Clear event selection when department changes
     setSelectedEvent("");
-    localStorage.removeItem("selectedEvent");
+    sessionStorage.removeItem("selectedEvent");
     
     if (dept && departmentsMap[dept]) {
       setEvents(departmentsMap[dept]);
@@ -124,7 +124,7 @@ export default function Scan() {
 
   const handleEventChange = (val) => {
     setSelectedEvent(val);
-    localStorage.setItem("selectedEvent", val);
+    sessionStorage.setItem("selectedEvent", val);
   };
 
   const handleScan = (result, error) => {

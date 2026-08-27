@@ -9,11 +9,11 @@ export default function Home() {
   const [role, setRole] = useState("");
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const isLoggedIn = sessionStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
       router.push("/login");
     } else {
-      setRole(localStorage.getItem("role") || "volunteer");
+      setRole(sessionStorage.getItem("role") || "volunteer");
       setAuthorized(true);
     }
   }, [router]);
@@ -66,9 +66,9 @@ export default function Home() {
 
           <button
             onClick={() => {
-              localStorage.removeItem("isLoggedIn");
-              localStorage.removeItem("role");
-              localStorage.removeItem("selectedEvent");
+              sessionStorage.removeItem("isLoggedIn");
+              sessionStorage.removeItem("role");
+              sessionStorage.removeItem("selectedEvent");
               router.push("/login");
             }}
             className="md:absolute md:top-4 md:right-4 px-6 py-2 bg-white/50 hover:bg-white text-gray-600 rounded-full text-sm font-medium transition-all border border-gray-200"
