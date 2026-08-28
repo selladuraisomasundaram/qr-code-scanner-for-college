@@ -126,20 +126,20 @@ export default async function handler(req, res) {
     const dept1StatusIndexRaw = headers.findIndex(h => h.includes("dept event 1 status") || h.includes("dept event 1") || h.includes("department event 1"));
     const dept2StatusIndexRaw = headers.findIndex(h => h.includes("dept event 2 status") || h.includes("dept event 2") || h.includes("department event 2"));
 
-    // Fallbacks to default production columns (Columns V through AB) if headers don't match
-    const idIndex = idIndexRaw !== -1 ? idIndexRaw : 21; // Column V
+    // Fallbacks to default production columns (Columns W through AC) if headers don't match
+    const idIndex = idIndexRaw !== -1 ? idIndexRaw : 22; // Column W
     const nameIndex = nameIndexRaw !== -1 ? nameIndexRaw : 2; // Column C
-    const statusIndex = statusIndexRaw !== -1 ? statusIndexRaw : 22; // Column W
+    const statusIndex = statusIndexRaw !== -1 ? statusIndexRaw : 23; // Column X
     
     const commonEventIndex = commonEventIndexRaw !== -1 ? commonEventIndexRaw : 9; // Column J
     const workshopParticipationIndex = workshopParticipationIndexRaw !== -1 ? workshopParticipationIndexRaw : 10; // Column K
     const deptEventIndex = deptEventIndexRaw !== -1 ? deptEventIndexRaw : 11; // Column L
 
-    const common1StatusIndex = common1StatusIndexRaw !== -1 ? common1StatusIndexRaw : 23; // Column X
-    const common2StatusIndex = common2StatusIndexRaw !== -1 ? common2StatusIndexRaw : 24; // Column Y
-    const workshopStatusIndex = workshopStatusIndexRaw !== -1 ? workshopStatusIndexRaw : 25; // Column Z
-    const dept1StatusIndex = dept1StatusIndexRaw !== -1 ? dept1StatusIndexRaw : 26; // Column AA
-    const dept2StatusIndex = dept2StatusIndexRaw !== -1 ? dept2StatusIndexRaw : 27; // Column AB
+    const common1StatusIndex = common1StatusIndexRaw !== -1 ? common1StatusIndexRaw : 24; // Column Y
+    const common2StatusIndex = common2StatusIndexRaw !== -1 ? common2StatusIndexRaw : 25; // Column Z
+    const workshopStatusIndex = workshopStatusIndexRaw !== -1 ? workshopStatusIndexRaw : 26; // Column AA
+    const dept1StatusIndex = dept1StatusIndexRaw !== -1 ? dept1StatusIndexRaw : 27; // Column AB
+    const dept2StatusIndex = dept2StatusIndexRaw !== -1 ? dept2StatusIndexRaw : 28; // Column AC
 
     let rowIndex = -1;
     let userData = null;
