@@ -217,15 +217,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Please select an event." });
       }
 
-      const registeredCommonText = currentRow[commonEventIndex] || "";
-      const registeredCommons = registeredCommonText.split(",");
       const cleanTarget = cleanString(selectedEvent);
-
-      const hasRegistered = registeredCommons.some(rc => cleanString(rc) === cleanTarget);
-
-      if (!hasRegistered) {
-        return res.status(400).json({ message: `Access Denied: Not registered for "${selectedEvent}".`, name: userData.name });
-      }
 
       const common1Val = currentRow[common1StatusIndex] || "";
       const common2Val = currentRow[common2StatusIndex] || "";
