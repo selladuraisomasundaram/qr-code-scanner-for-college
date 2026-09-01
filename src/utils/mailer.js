@@ -60,7 +60,8 @@ export async function sendSmartEmail({ to, subject, html }) {
         from: `"${process.env.SENDER_NAME || 'Event Team'}" <${senderEmail}>`,
         to,
         subject,
-        html,
+        html: html || (text ? text.replace(/\n/g, '<br>') : undefined),
+        text,
       });
       
       console.log(`Email sent successfully via ${provider.name}`);
