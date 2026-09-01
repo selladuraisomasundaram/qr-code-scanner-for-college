@@ -44,7 +44,7 @@ const providers = [
   },
 ];
 
-export async function sendSmartEmail({ to, subject, html }) {
+export async function sendSmartEmail({ to, subject, html, text }) {
   let lastError = null;
 
   for (const provider of providers) {
