@@ -126,6 +126,9 @@ export default async function handler(req, res) {
     const dept1StatusIndexRaw = headers.findIndex(h => h.includes("dept event 1 status") || h.includes("dept event 1") || h.includes("department event 1"));
     const dept2StatusIndexRaw = headers.findIndex(h => h.includes("dept event 2 status") || h.includes("dept event 2") || h.includes("department event 2"));
 
+    const paperPresDeptIndexRaw = headers.findIndex(h => h.includes("paper presentation") || (h.includes("paper") && h.includes("department")));
+    const projExpoDeptIndexRaw = headers.findIndex(h => !h.includes("paper presentation") && (h.includes("select the department in which you are willing to participate") || h.includes("project expo")));
+
     // Fallbacks to default production columns (Columns W through AC) if headers don't match
     const idIndex = idIndexRaw !== -1 ? idIndexRaw : 22; // Column W
     const nameIndex = nameIndexRaw !== -1 ? nameIndexRaw : 2; // Column C
@@ -235,6 +238,33 @@ export default async function handler(req, res) {
           const cleaned = cleanString(e);
           if (cleaned) checkedInCommons.push(cleaned);
         });
+      }
+
+      // Enforce strict AND registration check for Paper Presentation & Project Expo
+      if (cleanTarget === cleanString("PAPER PRESENTATION")) {
+        const registeredCommonText = currentRow[commonEventIndex] || "";
+        const hasCommonReg = registeredCommonText.split(",").some(rd => cleanString(rd) === cleanTarget);
+        const paperPresDeptVal = paperPresDeptIndexRaw !== -1 ? (currentRow[paperPresDeptIndexRaw] || "") : "";
+        const hasDeptSel = paperPresDeptVal.toString().trim().length > 0;
+
+        if (!hasCommonReg || !hasDeptSel) {
+          return res.status(400).json({ 
+            message: `Access Denied: Not registered for Paper Presentation.`, 
+            name: userData.name 
+          });
+        }
+      } else if (cleanTarget === cleanString("PROJECT EXPO")) {
+        const registeredCommonText = currentRow[commonEventIndex] || "";
+        const hasCommonReg = registeredCommonText.split(",").some(rd => cleanString(rd) === cleanTarget);
+        const projExpoDeptVal = projExpoDeptIndexRaw !== -1 ? (currentRow[projExpoDeptIndexRaw] || "") : "";
+        const hasDeptSel = projExpoDeptVal.toString().trim().length > 0;
+
+        if (!hasCommonReg || !hasDeptSel) {
+          return res.status(400).json({ 
+            message: `Access Denied: Not registered for Project Expo.`, 
+            name: userData.name 
+          });
+        }
       }
 
       if (checkedInCommons.includes(cleanTarget)) {
